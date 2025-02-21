@@ -1,0 +1,59 @@
+@PSEUDO CODE
+
+@ building
+r0 stores the mem addr of arg1
+
+@entry
+r1 stores mem addr of arg2
+while loop checks mem addr of R1 and R0 (stop loop at R0 #20)
+if R0 not 12 && R1 not 0, + to R0, - to R1
+if R0 hit 12, R0 #4 to next mem addr, + to R0, - to R1
+if R1 hit 0, R1 #4 to next mem addr, + to R0, - to R1
+
+@exit
+r2 stores mem addr of arg3
+while loop checks mem addr of R0 and R2 (stop loop at R0 #20)
+if R2 not 0, - to R0, - to R2
+if R2 is 0, both R0 #4 and R2 #4
+
+@ to access VALUE from mem addr
+assign r4 to [r0] aka MOV R4,[R0]
+assign r5 to [r1] aka MOV R5,[R1] 
+
+store result into arg4 and return arg4
+
+
+@ MOV is to duplicate value, LDR is to store a value from mem addr
+
+
+
+asm_func:
+
+	LDR R0, =arg1
+	LDR R1, =arg2
+	LDR R2, =arg3
+	LDR R3, =arg4
+
+@entry
+ENTRY_LOOP
+	LDR R4,[R0]
+	LDR R5,[R1]
+
+	CMP R0, #20 @ check if reached the end of carpark
+	BGE BREAK
+
+	CMP R4, #12 @ check if section is full
+	BGE BREAK
+
+	CMP R1, #0 @ check if entry queue is empty
+	BLE BREAK
+
+	ADD R4, R4, #1
+	SUB R5, R5, #1
+	STR R4, [R0] @ store back result into R0
+	STR R5, [R1] @ not sure if we need this line since it will just be arr of 0
+
+	B ENTRY_LOOP
+
+@BREAK is meant to do the #4 for R0 and R1 such the it jumps to next mem addr so
+@ can access the next value then jump back to ENTRY_LOOP
