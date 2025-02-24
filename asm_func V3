@@ -1,0 +1,56 @@
+    .global asm_func
+asm_func:
+    PUSH {r4-r11, lr}     @ Save registers
+
+    MOV r4, #0            @ r4 = index for entry array
+    MOV r7, #0            @ r7 = accumulated entries
+
+entry_loop:
+    LDR r6, [r2, r4, LSL #2]  @ Load entry[r4]
+    ADD r7, r7, r6            @ Accumulate sum
+    ADD r4, r4, #1            @ Increment index
+    CMP r4, #5
+    BLT entry_loop            @ Loop until 5 entries summed
+
+    MOV r4, #0        @ Reset section index
+    MOV r8, r7        @ Store total entries in r8
+
+distribute_entry:
+    LDR r5, [r0, r4, LSL #2]  @ Load building[i][j] (initial state)
+    CMP r8, #0
+    BEQ process_loop          @ Skip if no cars left to distribute
+
+    MOV r9, #12               @ Max capacity
+    SUB r10, r9, r5           @ Remaining capacity in section
+    CMP r8, r10               @ Compare available entries with remaining space
+    IT GT
+    MOVGT r6, r10             @ If more than available space, use max possible
+    IT LE
+    MOVLE r6, r8              @ Otherwise, use all available entries
+    ADD r5, r5, r6            @ Add cars to section
+    SUB r8, r8, r6            @ Reduce remaining entries
+    STR r5, [r0, r4, LSL #2]  @ Store updated value
+
+    ADD r4, r4, #1            @ Move to next section
+    CMP r4, #6                @ Check if done (F * S = 6)
+    BLT distribute_entry
+
+process_loop:
+    MOV r4, #0          @ Reset index for final processing
+
+final_update:
+    LDR r5, [r0, r4, LSL #2]   @ Load updated building[i][j]
+    LDR r6, [r1, r4, LSL #2]   @ Load exit[i][j]
+    SUB r5, r5, r6             @ building[i][j] - exit[i][j]
+
+    CMP r5, #0
+    IT LT
+    MOVLT r5, #0              @ Ensure no negative values
+
+    STR r5, [r3, r4, LSL #2]   @ Store result
+
+    ADD r4, r4, #1            @ Move to next section
+    CMP r4, #6
+    BLT final_update
+
+    POP {r4-r11, pc}          @ Restore registers and return
