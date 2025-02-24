@@ -1,0 +1,42 @@
+.syntax unified
+.cpu cortex-m4
+.fpu softvfp
+.thumb
+
+.global asm_func
+
+.section .text
+
+asm_func:
+    PUSH {r4-r7, lr}  @ Save registers
+
+    MOV r4, #0        @ r4 = counter for entry array
+    LDR r5, [r2]      @ r5 = base address of entry array
+    MOV r7, #0        @ r7 = sum accumulator
+
+entry_loop:
+    LDR r6, [r2, r4, LSL #2]  @ Load entry[r4]
+    ADD r7, r7, r6            @ Accumulate sum
+    ADD r4, r4, #1            @ Increment index
+    CMP r4, #5
+    BLT entry_loop            @ Loop until 5 entries summed
+
+    MOV r4, #0        @ Reset index for main processing loop
+
+process_loop:
+    LDR r5, [r0, r4, LSL #2]   @ Load initial cars
+    LDR r6, [r1, r4, LSL #2]   @ Load exiting cars
+    LDR r7, [r3, r4, LSL #2]   @ Load result array base
+
+    SUB r5, r5, r6   @ building[i][j] - exit[i][j]
+    ADD r5, r5, r7   @ Add accumulated entry cars
+    CMP r5, #12      @ Check if it exceeds max capacity
+    IT GT            @ If greater, execute the next instruction
+    MOVGT r5, #12    @ If greater, set to max capacity
+    STR r5, [r3, r4, LSL #2]   @ Store result
+
+    ADD r4, r4, #1   @ Move to next section
+    CMP r4, #6       @ Check if done (assuming F*S = 6)
+    BLT process_loop
+
+    POP {r4-r7, pc}  @ Restore registers and return
